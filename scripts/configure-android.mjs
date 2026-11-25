@@ -52,7 +52,7 @@ if (fs.existsSync(manifestPath)) {
   console.log("Patched AndroidManifest.xml with WAKE_LOCK and VIBRATE");
 }
 
-// 3. Set dark status bar & navigation bar colors
+// 3. Set dark status bar & navigation bar colors + launcher background
 const valuesDir = path.join(appMain, "res", "values");
 fs.mkdirSync(valuesDir, { recursive: true });
 const colorsPath = path.join(valuesDir, "colors.xml");
@@ -63,6 +63,15 @@ fs.writeFileSync(
     <color name="colorPrimary">#0E1011</color>
     <color name="colorPrimaryDark">#0E1011</color>
     <color name="colorAccent">#A3E635</color>
+</resources>
+`,
+  "utf8"
+);
+const launcherBgPath = path.join(valuesDir, "ic_launcher_background.xml");
+fs.writeFileSync(
+  launcherBgPath,
+  `<?xml version="1.0" encoding="utf-8"?>
+<resources>
     <color name="ic_launcher_background">#0E1011</color>
 </resources>
 `,
