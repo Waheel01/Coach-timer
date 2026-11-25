@@ -1,0 +1,55 @@
+name: Construire Coach Timer APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Installer Java 17 (Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Compiler l'application web
+        run: npm run build
+
+      - name: Générer et configurer le projet Android
+        env:
+          CI: "true"
+        run: |
+          npx cap telemetry off
+          npx cap add android
+          node scripts/configure-android.mjs
+          npx cap sync android
+
+      - name: Fabriquer le fichier Coach-Timer.apk
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Coach-Timer.apk
+
+      - name: Publier l'APK téléchargeable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coach-Timer-APK
+          path: Coach-Timer.apk
+          retention-days: 90

@@ -1,0 +1,10 @@
+{
+  "name": "Coach Timer",
+  "short_name": "Coach Timer",
+  "description": "Chronomètre de cours collectif HIIT, Circuit, Tabata et intervalles sans limite.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0E1011",
+  "theme_color": "#0E1011",
+  "orientation": "any"
+}

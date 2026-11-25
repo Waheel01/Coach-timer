@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background-color: #0e1011;
+    color: #f5f7f8;
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: #0e1011;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  :focus-visible {
+    outline: 2px solid #a3e635;
+    outline-offset: 2px;
+  }
+}
+
+.tabular-clock {
+  font-variant-numeric: tabular-nums;
+}
+
+.dotted-editable {
+  border-bottom: 1.5px dotted rgba(245, 247, 248, 0.35);
+}
+
+.dotted-editable:focus {
+  border-bottom-color: #a3e635;
+}
+
+@keyframes flashOverlay {
+  0% {
+    opacity: 0.42;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-phase-flash {
+  animation: flashOverlay 480ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-phase-flash {
+    animation: none;
+    opacity: 0;
+  }
+}
