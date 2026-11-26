@@ -3,7 +3,7 @@ import { TimerEditor } from "@/components/TimerEditor";
 import { TimerLibrary } from "@/components/TimerLibrary";
 import { TimerRunner } from "@/components/TimerRunner";
 import { AudioPrefs, WorkoutTimer } from "@/types";
-import { unlockAudio } from "@/utils/audio";
+import { triggerPhaseCue, unlockAudio } from "@/utils/audio";
 import {
   loadAudioPrefs,
   loadTimers,
@@ -67,12 +67,24 @@ export default function App() {
 
   const toggleBeep = () => {
     unlockAudio();
-    setAudioPrefs((p) => ({ ...p, beepEnabled: !p.beepEnabled }));
+    setAudioPrefs((p) => {
+      const next = !p.beepEnabled;
+      if (next && view.screen === "library") {
+        triggerPhaseCue("work-start", "", true, false);
+      }
+      return { ...p, beepEnabled: next };
+    });
   };
 
   const toggleVoice = () => {
     unlockAudio();
-    setAudioPrefs((p) => ({ ...p, voiceEnabled: !p.voiceEnabled }));
+    setAudioPrefs((p) => {
+      const next = !p.voiceEnabled;
+      if (next && view.screen === "library") {
+        triggerPhaseCue("work-start", "Voix activée", false, true);
+      }
+      return { ...p, voiceEnabled: next };
+    });
   };
 
   if (view.screen === "editor") {

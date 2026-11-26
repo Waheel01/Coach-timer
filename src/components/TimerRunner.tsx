@@ -19,7 +19,12 @@ import {
   TimelineStep,
   WorkoutTimer,
 } from "@/types";
-import { playCue, speakFrench, stopSpeech, unlockAudio } from "@/utils/audio";
+import {
+  stopAllAudio,
+  triggerCountdownCue,
+  triggerPhaseCue,
+  unlockAudio,
+} from "@/utils/audio";
 import { buildTimeline, formatBigClock, getTotalRoundsCount } from "@/utils/timeline";
 
 interface TimerRunnerProps {
@@ -74,26 +79,30 @@ export function TimerRunner({
   const announceStep = useCallback(
     (step: TimelineStep) => {
       setFlashKey((k) => k + 1);
-      if (audioPrefs.beepEnabled) {
-        if (step.kind === "rest" || step.kind === "cycle-rest") {
-          playCue("rest-start");
-        } else {
-          playCue("work-start");
-        }
-      }
-      if (audioPrefs.voiceEnabled) {
-        const spoken =
-          step.kind === "prepare"
-            ? "Préparez-vous"
-            : step.kind === "cycle-rest"
-              ? "Repos entre les cycles"
-              : step.kind === "cooldown"
-                ? "Récupération"
-                : step.isLastRoundOfSeries && step.kind === "work" && step.totalRounds > 1
-                  ? `${step.label}, dernier round`
-                  : step.label;
-        speakFrench(spoken);
-      }
+      const cueType =
+        step.kind === "rest" || step.kind === "cycle-rest"
+          ? "rest-start"
+          : "work-start";
+
+      const spoken =
+        step.kind === "prepare"
+          ? "Préparez-vous"
+          : step.kind === "cycle-rest"
+            ? "Repos entre les cycles"
+            : step.kind === "cooldown"
+              ? "Récupération"
+              : step.isLastRoundOfSeries &&
+                  step.kind === "work" &&
+                  step.totalRounds > 1
+                ? `Dernier round ! ${step.label}`
+                : step.label;
+
+      triggerPhaseCue(
+        cueType,
+        spoken,
+        audioPrefs.beepEnabled,
+        audioPrefs.voiceEnabled
+      );
     },
     [audioPrefs.beepEnabled, audioPrefs.voiceEnabled]
   );
@@ -124,10 +133,10 @@ export function TimerRunner({
     };
   }, [isRunning]);
 
-  // Stop speech when leaving runner
+  // Stop audio and release Spotify ducking focus when leaving runner
   useEffect(() => {
     return () => {
-      stopSpeech();
+      stopAllAudio();
     };
   }, []);
 
@@ -144,7 +153,7 @@ export function TimerRunner({
       const msLeft = endTimestampRef.current - Date.now();
       const nextSec = Math.ceil(msLeft / 1000);
 
-      // 3 - 2 - 1 countdown beeps
+      // 3 - 2 - 1 countdown beeps + French countdown voice over Spotify
       if (
         nextSec <= 3 &&
         nextSec >= 1 &&
@@ -152,9 +161,11 @@ export function TimerRunner({
         currentStep.durationSec >= 4
       ) {
         lastBeepedSecRef.current = nextSec;
-        if (audioPrefs.beepEnabled) {
-          playCue("countdown");
-        }
+        triggerCountdownCue(
+          nextSec,
+          audioPrefs.beepEnabled,
+          audioPrefs.voiceEnabled
+        );
       }
 
       if (msLeft <= 0) {
@@ -166,8 +177,12 @@ export function TimerRunner({
           setIsFinished(true);
           setSecondsLeft(0);
           endTimestampRef.current = null;
-          if (audioPrefs.beepEnabled) playCue("finish");
-          if (audioPrefs.voiceEnabled) speakFrench("Séance terminée ! Bravo !");
+          triggerPhaseCue(
+            "finish",
+            "Séance terminée ! Bravo !",
+            audioPrefs.beepEnabled,
+            audioPrefs.voiceEnabled
+          );
         } else {
           const next = steps[upcomingIdx];
           setStepIdx(upcomingIdx);
@@ -209,7 +224,7 @@ export function TimerRunner({
       }
       endTimestampRef.current = null;
       setIsRunning(false);
-      stopSpeech();
+      stopAllAudio();
     } else {
       const startingFresh =
         stepIdx === 0 && secondsLeft === steps[0]?.durationSec;
@@ -224,7 +239,7 @@ export function TimerRunner({
 
   const handleRestart = () => {
     unlockAudio();
-    stopSpeech();
+    stopAllAudio();
     setStepIdx(0);
     setSecondsLeft(steps[0]?.durationSec ?? 0);
     setIsFinished(false);
@@ -253,7 +268,7 @@ export function TimerRunner({
     if (isRunning && !isFinished) {
       setConfirmExit(true);
     } else {
-      stopSpeech();
+      stopAllAudio();
       onExit();
     }
   };
@@ -575,7 +590,7 @@ export function TimerRunner({
               <button
                 type="button"
                 onClick={() => {
-                  stopSpeech();
+                  stopAllAudio();
                   onExit();
                 }}
                 className="flex h-12 flex-1 items-center justify-center rounded-xl bg-phase-rest text-sm font-semibold text-white"
